@@ -1,0 +1,241 @@
+---
+title: "Project 2 - Alon Goodman & Ran Hassid"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Q1 #
+
+```{r}
+#install.packages("igraph")
+library(igraph)
+```
+
+### The System ###
+
+```{r,echo=FALSE}
+graph.Q1 <- make_graph(c(
+  "A", "B", "A", "C","A", "D","A", "E",
+  "B","C","B","F",
+  "C","F","C","G","C","D","C","H",
+  "D","E","D","H","D","I","D","G",
+  "E","I",
+  "F","G","F","J",
+  "G","H","G","J",
+  "H","I","H","J",
+  "I","J"), directed = TRUE)
+
+plot(graph.Q1)
+```
+
+## a ##
+
+The distribution of the time of until an edge will not working is exp(theta).
+
+So, the probability that an edge will not work after 10 days:
+
+P(exp(theta)<10) = 1 - e^(-10 * theta)
+
+```{r}
+theta <- 0.02
+
+h_x.result_vec.a <- numeric(15000)
+
+for (i in 1:15000) {
+  graph.zero_day.i <- make_graph(c("A", "B", "A", "C","A", "D","A", "E",
+                           "B","C","B","F",
+                           "C","F","C","G","C","D","C","H",
+                           "D","E","D","H","D","I","D","G",
+                           "E","I",
+                           "F","G","F","J",
+                           "G","H","G","J",
+                           "H","I","H","J",
+                           "I","J"), directed = TRUE)
+  after_10_days.i <- rbinom(n = 22,size = 1,prob = 1-exp(-10*theta))
+  graph_after_10_days.i <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i==1))
+  paths_A_J_after_10_days.i <- all_simple_paths(graph = graph_after_10_days.i,from = "A","J")
+  if(identical(paths_A_J_after_10_days.i,list())){
+    h_x.result_vec.a[i] <- 1
+  }
+  
+}
+
+```
+
+
+```{r,echo=FALSE}
+cat(sprintf("Expected value estimator = %s", round(mean(h_x.result_vec.a),4)),
+    sprintf("Varinace value estimator = %s", round(var(h_x.result_vec.a),4)),
+    sep = "\n")
+```
+
+
+```{r}
+
+est.int <- cumsum(h_x.result_vec.a)/(1:15000)
+est.err <- sqrt( cumsum( (h_x.result_vec.a-est.int)^2 )) / (1:15000)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2, ylim = mean(h_x.result_vec.a)+100*est.err[15000]*c(-1,1))
+lines(est.int + 2*est.err, col = "gold", lwd = 2)
+lines(est.int - 2*est.err, col = "gold", lwd = 2)
+```
+ 
+## b ##
+
+```{r}
+theta <- 0.005
+
+h_x.result_vec.b <- numeric(50000)
+
+for (i in 1:50000) {
+  graph.zero_day.i <- make_graph(c("A", "B", "A", "C","A", "D","A", "E",
+                           "B","C","B","F",
+                           "C","F","C","G","C","D","C","H",
+                           "D","E","D","H","D","I","D","G",
+                           "E","I",
+                           "F","G","F","J",
+                           "G","H","G","J",
+                           "H","I","H","J",
+                           "I","J"), directed = TRUE)
+  after_10_days.i <- rbinom(n = 22,size = 1,prob = 1-exp(-10*theta))
+  graph_after_10_days.i <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i==1))
+  paths_A_J_after_10_days.i <- all_simple_paths(graph = graph_after_10_days.i,from = "A","J")
+  if(identical(paths_A_J_after_10_days.i,list())){
+    h_x.result_vec.b[i] <- 1
+  }
+  
+}
+
+```
+
+```{r,echo=FALSE}
+cat(sprintf("Expected value estimator = %s", mean(h_x.result_vec.b)),
+    sprintf("Varinace value estimator = %s", var(h_x.result_vec.b)),
+    sprintf("Out of 50,000 test, the no. of failures = %s", sum(h_x.result_vec.b)),
+    sep = "\n")
+```
+
+```{r}
+
+est.int <- cumsum(h_x.result_vec.b)/(1:50000)
+est.err <- sqrt( cumsum( (h_x.result_vec.b-est.int)^2 )) / (1:50000)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2, ylim = mean(h_x.result_vec.b)+100*est.err[50000]*c(-1,1))
+lines(est.int + 2*est.err, col = "gold", lwd = 2)
+lines(est.int - 2*est.err, col = "gold", lwd = 2)
+```
+
+## c ## 
+
+```{r}
+theta.f <- 0.02
+theta.g <- 0.05
+
+h_x.result_vec.c <- numeric(15000)
+
+for (i in 1:15000) {
+  graph.zero_day.i <- make_graph(c("A", "B", "A", "C","A", "D","A", "E",
+                           "B","C","B","F",
+                           "C","F","C","G","C","D","C","H",
+                           "D","E","D","H","D","I","D","G",
+                           "E","I",
+                           "F","G","F","J",
+                           "G","H","G","J",
+                           "H","I","H","J",
+                           "I","J"), directed = TRUE)
+  after_10_days.i <- rbinom(n = 22,size = 1,prob = 1-exp(-10*theta.g))
+  graph_after_10_days.i <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i==1))
+  paths_A_J_after_10_days.i <- all_simple_paths(graph = graph_after_10_days.i,from = "A","J")
+  if(identical(paths_A_J_after_10_days.i,list())){
+    h_x.result_vec.c[i] <- 1*prod( dbinom(x = after_10_days.i,size = 1,prob = 1-exp(-10*theta.f)) / dbinom(x = after_10_days.i,size = 1,prob = 1-exp(-10*theta.g)))
+  }
+  
+}
+
+```
+
+```{r,echo=FALSE}
+cat(sprintf("Expected value estimator = %s", round(mean(h_x.result_vec.c),4)),
+    sprintf("Varinace value estimator = %s", round(var(h_x.result_vec.c),4)),
+    sep = "\n")
+```
+
+```{r}
+est.int <- cumsum(h_x.result_vec.c)/(1:15000)
+est.err <- sqrt( cumsum( (h_x.result_vec.c-est.int)^2 )) / (1:15000)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2, ylim = mean(h_x.result_vec.c)+100*est.err[15000]*c(-1,1))
+lines(est.int + 2*est.err, col = "gold", lwd = 2)
+lines(est.int - 2*est.err, col = "gold", lwd = 2)
+```
+
+
+## d ## 
+
+```{r}
+theta.f <- 0.005
+theta.g <- 0.02
+
+h_x.result_vec.d <- numeric(50000)
+
+for (i in 1:50000) {
+  graph.zero_day.i <- make_graph(c("A", "B", "A", "C","A", "D","A", "E",
+                           "B","C","B","F",
+                           "C","F","C","G","C","D","C","H",
+                           "D","E","D","H","D","I","D","G",
+                           "E","I",
+                           "F","G","F","J",
+                           "G","H","G","J",
+                           "H","I","H","J",
+                           "I","J"), directed = TRUE)
+  after_10_days.i <- rbinom(n = 22,size = 1,prob = 1-exp(-10*theta.g))
+  graph_after_10_days.i <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i==1))
+  paths_A_J_after_10_days.i <- all_simple_paths(graph = graph_after_10_days.i,from = "A","J")
+  if(identical(paths_A_J_after_10_days.i,list())){
+    h_x.result_vec.d[i] <- 1*prod( dbinom(x = after_10_days.i,size = 1,prob = 1-exp(-10*theta.f)) / dbinom(x = after_10_days.i,size = 1,prob = 1-exp(-10*theta.g)))
+  }
+  
+}
+
+```
+
+```{r,echo=FALSE}
+cat(sprintf("Expected value estimator = %s", mean(h_x.result_vec.d)),
+    sprintf("Varinace value estimator = %s", var(h_x.result_vec.d)),
+    sep = "\n")
+```
+
+```{r}
+est.int <- cumsum(h_x.result_vec.d)/(1:50000)
+est.err <- sqrt( cumsum( (h_x.result_vec.d-est.int)^2 )) / (1:50000)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2)
+
+plot(est.int, xlab = "Mean and Error range", ylab = "", type = "l", lwd = 2, ylim = mean(h_x.result_vec.d)+100*est.err[50000]*c(-1,1))
+lines(est.int + 2*est.err, col = "gold", lwd = 2)
+lines(est.int - 2*est.err, col = "gold", lwd = 2)
+```
+
+```{r,echo=FALSE}
+summary_table <- matrix(data =
+                          c(mean(h_x.result_vec.a),var(h_x.result_vec.a),
+                            mean(h_x.result_vec.b),var(h_x.result_vec.b),
+                            mean(h_x.result_vec.c),var(h_x.result_vec.c),
+                            mean(h_x.result_vec.d),var(h_x.result_vec.d)),
+                        nrow = 2,
+                        ncol = 4,
+                        dimnames = list(c("Expected value estimator","Varinac value estimator"),c("A","B","C","D")))
+
+summary_table
+
+```
+
+It can be seen that the difference between section A and section B is that when the probability of system failure is so low, it is more "expensive" to sample and get a "good" estimation for expectation.
+When in sections C and D we used "IS" method, we actually sampled from a similar distribution but with a larger parameter. That is, we have created a situation where there is a greater chance of seeing a system failure. As a result, the samples were "cheaper". This can be seen by looking at the variance estimations: IS's variance estimations are significantly smaller than the non-IS variance estimations.
