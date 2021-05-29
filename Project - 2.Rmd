@@ -66,7 +66,7 @@ for (i in 1:15000) {
 
 ```{r,echo=FALSE}
 cat(sprintf("Expected value estimator = %s", round(mean(h_x.result_vec.a),4)),
-    sprintf("Varinace value estimator = %s", round(var(h_x.result_vec.a),4)),
+    sprintf("Varinace estimator = %s", round(var(h_x.result_vec.a),4)),
     sep = "\n")
 ```
 
@@ -113,7 +113,7 @@ for (i in 1:50000) {
 
 ```{r,echo=FALSE}
 cat(sprintf("Expected value estimator = %s", mean(h_x.result_vec.b)),
-    sprintf("Varinace value estimator = %s", var(h_x.result_vec.b)),
+    sprintf("Varinace estimator = %s", var(h_x.result_vec.b)),
     sprintf("Out of 50,000 test, the no. of failures = %s", sum(h_x.result_vec.b)),
     sep = "\n")
 ```
@@ -161,7 +161,7 @@ for (i in 1:15000) {
 
 ```{r,echo=FALSE}
 cat(sprintf("Expected value estimator = %s", round(mean(h_x.result_vec.c),4)),
-    sprintf("Varinace value estimator = %s", round(var(h_x.result_vec.c),4)),
+    sprintf("Varinace estimator = %s", round(var(h_x.result_vec.c),4)),
     sep = "\n")
 ```
 
@@ -208,7 +208,7 @@ for (i in 1:50000) {
 
 ```{r,echo=FALSE}
 cat(sprintf("Expected value estimator = %s", mean(h_x.result_vec.d)),
-    sprintf("Varinace value estimator = %s", var(h_x.result_vec.d)),
+    sprintf("Varinace estimator = %s", var(h_x.result_vec.d)),
     sep = "\n")
 ```
 
@@ -239,3 +239,128 @@ summary_table
 
 It can be seen that the difference between section A and section B is that when the probability of system failure is so low, it is more "expensive" to sample and get a "good" estimation for expectation.
 When in sections C and D we used "IS" method, we actually sampled from a similar distribution but with a larger parameter. That is, we have created a situation where there is a greater chance of seeing a system failure. As a result, the samples were "cheaper". This can be seen by looking at the variance estimations: IS's variance estimations are significantly smaller than the non-IS variance estimations.
+
+
+
+Q2.D.1
+h(u) = -log(1-u)/theta
+u gets values between 0 and 1. so, (1-u) gets smaller values as u increases.
+Giving a small value to a log function gets a smaller value and multiplying by minus 1/theta gives us a larger value (we know theta is positive).
+Therefore, our function is a monotonically increasing function in u values.
+
+```{r}
+#theta <- 0.02
+
+#h_x.result_vec.2.d <- numeric(15000)
+
+for (i in 1:15000) {
+  graph.zero_day.i <- make_graph(c("A", "B", "A", "C","A", "D","A", "E",
+                           "B","C","B","F",
+                           "C","F","C","G","C","D","C","H",
+                           "D","E","D","H","D","I","D","G",
+                           "E","I",
+                           "F","G","F","J",
+                           "G","H","G","J",
+                           "H","I","H","J",
+                           "I","J"), directed = TRUE)
+  u_vec <- runif(22)
+  after_10_days.i <- -log(1-u_vec)/theta
+  graph_after_10_days.i <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i<=10))
+  paths_A_J_after_10_days.i <- all_simple_paths(graph = graph_after_10_days.i,from = "A","J")
+  if(identical(paths_A_J_after_10_days.i,list())){
+    h_x.result_vec.2.d[i] <- 1
+  }
+  
+}
+
+
+```
+Q2.D.2
+
+we will use antithetic sampling by using the following h functions:
+- h(u) = -log(1-u)/theta   - monotonically increasing function in u values.
+- h(1-u) = -log(1-(1-u))/theta = -log(u)/theta   - monotonically decreasing function in u values.
+
+```{r}
+theta <- 0.02
+
+h_x.result_vec.2.d.inc <- numeric(15000)
+h_x.result_vec.2.d.dec <- numeric(15000)
+
+for (i in 1:15000) {
+  graph.zero_day.i <- make_graph(c("A", "B", "A", "C","A", "D","A", "E",
+                           "B","C","B","F",
+                           "C","F","C","G","C","D","C","H",
+                           "D","E","D","H","D","I","D","G",
+                           "E","I",
+                           "F","G","F","J",
+                           "G","H","G","J",
+                           "H","I","H","J",
+                           "I","J"), directed = TRUE)
+  u_vec <- runif(22)
+  after_10_days.i.inc <- -log(1-u_vec)/theta
+  after_10_days.i.dec <- -log(u_vec)/theta
+  
+  graph_after_10_days.i.inc <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i.inc<=10))
+  graph_after_10_days.i.dec <- delete.edges(graph = graph.zero_day.i,edges = which(after_10_days.i.dec<=10))
+  
+  paths_A_J_after_10_days.i.inc <- all_simple_paths(graph = graph_after_10_days.i.inc,from = "A","J")
+  paths_A_J_after_10_days.i.dec <- all_simple_paths(graph = graph_after_10_days.i.dec,from = "A","J")
+  
+  
+  if(identical(paths_A_J_after_10_days.i.inc,list())){
+    h_x.result_vec.2.d.inc[i] <- 1
+  }
+  if(identical(paths_A_J_after_10_days.i.dec,list())){
+    h_x.result_vec.2.d.dec[i] <- 1
+  }
+  
+}
+
+
+
+```
+
+var(AS_est) = var(0.5(mu1_est + mu2_est)) = (var(mu1_est)+var(mu2_est)+2*cov(mu1_est,mu2_est))/4
+```{r,echo=FALSE}
+cat(sprintf("Antithetic sampling expected value estimator = %s", round(0.5*(mean(h_x.result_vec.2.d.inc) + mean(h_x.result_vec.2.d.dec)),4)),
+    sprintf("Antithetic sampling varinace estimator = %s", round((var(h_x.result_vec.2.d.inc) + var(h_x.result_vec.2.d.dec) + 2*cov(h_x.result_vec.2.d.inc,h_x.result_vec.2.d.dec))/4,4)),
+    sep = "\n")
+
+```
+Comparison between Antithetic sampling estimator and Importance sampling:
+```{r,echo=FALSE}
+cat(sprintf("Antithetic sampling expected value estimator = %s", round(0.5*(mean(h_x.result_vec.2.d.inc) + mean(h_x.result_vec.2.d.dec)),4)),
+    sprintf("Antithetic sampling varinace estimator = %s", round((var(h_x.result_vec.2.d.inc) + var(h_x.result_vec.2.d.dec) + 2*cov(h_x.result_vec.2.d.inc,h_x.result_vec.2.d.dec))/4,4)),
+    sprintf("Importance sampling expected value estimator = %s", round(mean(h_x.result_vec.a),4)),
+    sprintf("Importance sampling varinace estimator = %s", round(var(h_x.result_vec.a),4)),
+    sep = "\n")
+
+
+```
+We can see we got similar expected value estimator, but smaller varince for the Antithetic sampling estimator.
+
+Q2.D.3
+```{r}
+
+
+# antithetic sampling estimator
+result_vec_d3 <- numeric(10000)
+
+x_norm_vec <- rnorm(10000)
+h_x_plus <- (exp(x_norm_vec) + 7)^(x_norm_vec/3)
+h_x_minus <- (exp(-x_norm_vec) + 7)^(-x_norm_vec/3)
+
+0.5*(mean(h_x_plus)+mean(h_x_minus))
+(var(h_x_plus) + var(h_x_minus) + 2*cov(h_x_plus,h_x_minus)) / 4
+
+
+# monte carlo estimator
+h_x_monte_carlo <- (exp(x_norm_vec) + 7)^(x_norm_vec/3)
+
+mean(h_x_monte_carlo)
+var(h_x_monte_carlo)
+
+
+```
+we got that the variance of antithetic sampling estimator is 4 times smaller than the monte carlo estimator
